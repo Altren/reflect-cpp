@@ -40,10 +40,6 @@ Writer::OutputMapType Writer::map_as_root(const size_t _size) const {
   return OutputMapType{};
 }
 
-Writer::OutputObjectType Writer::object_as_root(const size_t _size) const {
-  return OutputObjectType{};
-}
-
 Writer::OutputUnionType Writer::union_as_root() const {
   return OutputUnionType{};
 }
@@ -107,21 +103,10 @@ Writer::OutputMapType Writer::add_map_to_union(const size_t _index,
   return OutputMapType{};
 }
 
-Writer::OutputObjectType Writer::add_object_to_array(
-    const size_t _size, OutputArrayType* _parent) const {
-  return OutputObjectType{};
-}
-
 Writer::OutputObjectType Writer::add_object_to_map(
     const std::string_view& _name, const size_t _size,
     OutputMapType* _parent) const {
   add_string_view(_name);
-  return OutputObjectType{};
-}
-
-Writer::OutputObjectType Writer::add_object_to_object(
-    const std::string_view& _name, const size_t _size,
-    OutputObjectType* _parent) const {
   return OutputObjectType{};
 }
 
@@ -174,12 +159,6 @@ Writer::OutputVarType Writer::add_null_to_union(
   (*archive_)(_index);
   return OutputVarType{};
 }
-
-void Writer::end_array(OutputArrayType* _arr) const noexcept {}
-
-void Writer::end_map(OutputMapType* _map) const noexcept {}
-
-void Writer::end_object(OutputObjectType* _obj) const noexcept {}
 
 void Writer::add_string_view(const std::string_view& _str) const {
   (*archive_)(::cereal::make_size_tag(_str.size()));

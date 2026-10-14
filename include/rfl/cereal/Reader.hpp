@@ -98,24 +98,32 @@ struct Reader {
   /// @param _var The Cereal archive variable
   /// @return A Result containing an InputArrayType or an error
   rfl::Result<InputArrayType> to_array(
-      const InputVarType& _var) const noexcept;
+      const InputVarType& _var) const noexcept {
+    return InputArrayType{_var.archive_};
+  }
 
   /// Converts a Cereal archive value to an object (struct) type.
   /// @param _var The Cereal archive variable
   /// @return A Result containing an InputObjectType or an error
   rfl::Result<InputObjectType> to_object(
-      const InputVarType& _var) const noexcept;
+      const InputVarType& _var) const noexcept {
+    return InputObjectType{_var.archive_};
+  }
 
   /// Converts a Cereal archive value to a map type.
   /// @param _var The Cereal archive variable
   /// @return A Result containing an InputMapType or an error
-  rfl::Result<InputMapType> to_map(const InputVarType& _var) const noexcept;
+  rfl::Result<InputMapType> to_map(const InputVarType& _var) const noexcept {
+    return InputMapType{_var.archive_};
+  }
 
   /// Converts a Cereal archive value to a union (variant) type.
   /// @param _var The Cereal archive variable
   /// @return A Result containing an InputUnionType or an error
   rfl::Result<InputUnionType> to_union(
-      const InputVarType& _var) const noexcept;
+      const InputVarType& _var) const noexcept {
+    return InputUnionType{_var.archive_};
+  }
 
   /// Reads all elements from a Cereal array using the provided array reader.
   /// Cereal stores the size as a size tag before the elements.

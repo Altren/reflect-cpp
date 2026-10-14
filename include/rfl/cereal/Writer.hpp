@@ -63,7 +63,9 @@ class Writer {
   /// Creates an object as the root element.
   /// @param _size The number of fields in the object
   /// @return An OutputObjectType
-  OutputObjectType object_as_root(const size_t _size) const;
+  OutputObjectType object_as_root(const size_t) const {
+    return OutputObjectType{};
+  }
 
   /// Creates a union as the root element.
   /// @return An OutputUnionType
@@ -107,16 +109,20 @@ class Writer {
   OutputMapType add_map_to_union(const size_t _index, const size_t _size,
                                  OutputUnionType* _parent) const;
 
-  OutputObjectType add_object_to_array(const size_t _size,
-                                       OutputArrayType* _parent) const;
+  OutputObjectType add_object_to_array(const size_t,
+                                       OutputArrayType*) const {
+    return OutputObjectType{};
+  }
 
   OutputObjectType add_object_to_map(const std::string_view& _name,
                                      const size_t _size,
                                      OutputMapType* _parent) const;
 
-  OutputObjectType add_object_to_object(const std::string_view& _name,
-                                        const size_t _size,
-                                        OutputObjectType* _parent) const;
+  OutputObjectType add_object_to_object(const std::string_view&,
+                                        const size_t,
+                                        OutputObjectType*) const {
+    return OutputObjectType{};
+  }
 
   OutputObjectType add_object_to_union(const size_t _index, const size_t _size,
                                        OutputUnionType* _parent) const;
@@ -172,11 +178,11 @@ class Writer {
   OutputVarType add_null_to_union(const size_t _index,
                                   OutputUnionType* _parent) const;
 
-  void end_array(OutputArrayType* _arr) const noexcept;
+  void end_array(OutputArrayType*) const noexcept {}
 
-  void end_map(OutputMapType* _map) const noexcept;
+  void end_map(OutputMapType*) const noexcept {}
 
-  void end_object(OutputObjectType* _obj) const noexcept;
+  void end_object(OutputObjectType*) const noexcept {}
 
   template <class T>
   void write_array_data(const T* _data, const std::size_t _size) const {

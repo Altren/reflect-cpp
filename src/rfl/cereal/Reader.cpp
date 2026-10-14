@@ -32,24 +32,4 @@ bool Reader::is_empty(const InputVarType& _var) const noexcept {
   return _var.archive_ == nullptr;
 }
 
-rfl::Result<Reader::InputArrayType> Reader::to_array(
-    const InputVarType& _var) const noexcept {
-  return InputArrayType{_var.archive_};
-}
-
-rfl::Result<Reader::InputObjectType> Reader::to_object(
-    const InputVarType& _var) const noexcept {
-  return InputObjectType{_var.archive_};
-}
-
-rfl::Result<Reader::InputMapType> Reader::to_map(
-    const InputVarType& _var) const noexcept {
-  return InputMapType{_var.archive_};
-}
-
-rfl::Result<Reader::InputUnionType> Reader::to_union(
-    const InputVarType& _var) const noexcept {
-  return InputUnionType{_var.archive_};
-}
-
 }  // namespace rfl::cereal
