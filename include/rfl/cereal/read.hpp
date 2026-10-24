@@ -4,10 +4,11 @@
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/cereal.hpp>
 #include <istream>
-#include <sstream>
+#include <string>
 
 #include "../Processors.hpp"
 #include "../concepts.hpp"
+#include "../internal/MemoryInputBuffer.hpp"
 #include "../internal/wrap_in_rfl_array_t.hpp"
 #include "Parser.hpp"
 #include "Reader.hpp"
@@ -30,7 +31,7 @@ auto read(Reader::CerealArchive& _archive) {
 }
 
 /// Parses an object from raw bytes using Cereal portable binary format.
-/// Creates a memory stream and deserializes using Cereal.
+/// Reads from the supplied bytes without copying them into an owning stream.
 /// @tparam T The type to deserialize into
 /// @tparam Ps Optional processors to apply during deserialization
 /// @param _bytes Pointer to the binary data
@@ -40,9 +41,10 @@ template <class T, class... Ps>
 Result<internal::wrap_in_rfl_array_t<T>> read(
     const concepts::ByteLike auto* _bytes, const size_t _size) {
   try {
-    std::stringstream ss(
-        std::string(reinterpret_cast<const char*>(_bytes), _size));
-    ::cereal::PortableBinaryInputArchive archive(ss);
+    internal::MemoryInputBuffer buffer(reinterpret_cast<const char*>(_bytes),
+                                       _size);
+    std::istream stream(&buffer);
+    ::cereal::PortableBinaryInputArchive archive(stream);
     return read<T, Ps...>(archive);
   } catch (std::exception& e) {
     return error(std::string("Cereal read error: ") + e.what());

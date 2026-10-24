@@ -5,11 +5,11 @@
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/serialization/string.hpp>
 #include <istream>
-#include <streambuf>
 #include <string>
 
 #include "../Processors.hpp"
 #include "../concepts.hpp"
+#include "../internal/MemoryInputBuffer.hpp"
 #include "../internal/wrap_in_rfl_array_t.hpp"
 #include "Parser.hpp"
 #include "Reader.hpp"
@@ -26,14 +26,7 @@ auto read_from_archive(IArchive& _ar) {
   return Parser<IArchive, OArchive, T, Processors<Ps...>>::read(r, var);
 }
 
-/// A read-only streambuf that wraps an existing memory buffer without copying.
-class MemBuf : public std::streambuf {
- public:
-  MemBuf(const char* _data, size_t _size) {
-    auto* p = const_cast<char*>(_data);
-    setg(p, p, p + _size);
-  }
-};
+using MemBuf = internal::MemoryInputBuffer;
 
 }  // namespace detail
 
@@ -51,7 +44,8 @@ auto read_from_archive(IArchive& _ar) {
 }
 
 /// Parses an object from raw bytes using Boost binary archive.
-/// Creates a memory stream from the bytes and deserializes using Boost.Serialization.
+/// Creates a memory stream from the bytes and deserializes using
+/// Boost.Serialization.
 /// @tparam T The type to deserialize into
 /// @tparam Ps Optional processors to apply during deserialization
 /// @param _bytes Pointer to the binary data
@@ -76,7 +70,8 @@ Result<internal::wrap_in_rfl_array_t<T>> read(
 /// Parses an object from a byte container using Boost binary archive.
 /// @tparam T The type to deserialize into
 /// @tparam Ps Optional processors to apply during deserialization
-/// @param _bytes A contiguous container (e.g., std::vector, std::string) containing the data
+/// @param _bytes A contiguous container (e.g., std::vector, std::string)
+/// containing the data
 /// @return A Result containing the deserialized object or an error
 template <class T, class... Ps>
 auto read(const concepts::ContiguousByteContainer auto& _bytes) {
