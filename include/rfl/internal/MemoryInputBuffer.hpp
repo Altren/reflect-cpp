@@ -26,7 +26,7 @@ class MemoryInputBuffer final : public std::streambuf {
     if (_count <= 0) return 0;
     const auto count =
         std::min(_count, static_cast<std::streamsize>(egptr() - gptr()));
-    if (count != 0) {
+    if (count > 0) {
       std::memcpy(_dest, gptr(), static_cast<std::size_t>(count));
       setg(eback(), gptr() + count, egptr());
     }
