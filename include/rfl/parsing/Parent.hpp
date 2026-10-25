@@ -99,6 +99,8 @@ struct Parent {
       return add_array(_w, _size, _parent);
     } else if constexpr (std::is_same_v<Type, Array>) {
       return _w.add_fixed_array_to_array(_size, _parent.arr_);
+    } else if constexpr (is_map_entry<Type>()) {
+      return _w.add_fixed_array_to_map_entry(_size, _parent.entry_);
     } else if constexpr (std::is_same_v<Type, Object>) {
       return _w.add_fixed_array_to_object(_parent.name_, _size, _parent.obj_);
     } else if constexpr (std::is_same_v<Type, Root>) {

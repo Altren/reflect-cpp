@@ -3,6 +3,7 @@
 
 #include <gtest/gtest.h>
 
+#include <array>
 #include <cmath>
 #include <cstdint>
 #include <functional>
@@ -47,6 +48,10 @@ inline void check(const auto& write, const auto& read) {
             std::unordered_map<int, std::string>{{-7, "a"}, {42, "b"}});
   roundtrip(write, read, std::map<bool, int>{{false, 1}, {true, 2}});
   roundtrip(write, read, std::map<std::string, int>{{"", 1}, {"42", 2}});
+  roundtrip(write, read,
+            std::map<int, std::array<int, 2>>{{1, {2, 3}}, {4, {5, 6}}});
+  roundtrip(write, read,
+            std::map<int, std::array<int, 0>>{{1, {}}, {2, {}}});
 
   roundtrip(write, read, std::map<int, int, std::greater<int>>{{1, 2}, {3, 4}});
   roundtrip(write, read,

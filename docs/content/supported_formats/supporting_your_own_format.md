@@ -455,6 +455,8 @@ A writer defines an `OutputMapEntryType` context and the following methods:
 ```cpp
 OutputMapEntryType map_entry(OutputMapType* map) const;
 OutputArrayType add_array_to_map_entry(size_t size, OutputMapEntryType*) const;
+// Additionally required if the writer provides fixed_array_as_root:
+OutputArrayType add_fixed_array_to_map_entry(size_t size, OutputMapEntryType*) const;
 OutputObjectType add_object_to_map_entry(size_t size, OutputMapEntryType*) const;
 OutputVarType add_null_to_map_entry(OutputMapEntryType*) const;
 
