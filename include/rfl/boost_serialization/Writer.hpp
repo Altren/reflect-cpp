@@ -41,6 +41,11 @@ class Writer {
     return array_as_root(_size);
   }
 
+  OutputArrayType add_fixed_array_to_map_entry(const size_t _size,
+                                               OutputMapEntryType*) const {
+    return fixed_array_as_root(_size);
+  }
+
   OutputObjectType add_object_to_map_entry(const size_t _size,
                                            OutputMapEntryType*) const {
     return object_as_root(_size);

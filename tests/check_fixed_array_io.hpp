@@ -33,6 +33,13 @@ void check_sizes(Write write, Read read, const size_t prefix_size) {
             bytes.size() + prefix_size);
   check_roundtrip(input, write, read);
 
+  const std::map<int, Array> fixed_values{{7, input}};
+  const std::map<int, std::vector<std::int32_t>> dynamic_values{
+      {7, {input.begin(), input.end()}}};
+  EXPECT_EQ(write(dynamic_values).size(),
+            write(fixed_values).size() + prefix_size);
+  check_roundtrip(fixed_values, write, read);
+
   const std::array<std::int32_t, 0> empty{};
   EXPECT_EQ(write(empty).size(), header_size);
   check_roundtrip(empty, write, read);
