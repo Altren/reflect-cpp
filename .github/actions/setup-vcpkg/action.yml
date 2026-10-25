@@ -1,0 +1,44 @@
+name: Set up vcpkg
+description: Set up vcpkg with a persistent binary cache and download retries.
+
+inputs:
+  cache-key:
+    description: Matrix configuration (compiler, standard, format, and build variant).
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Configure caching and download retries
+      id: config
+      shell: bash
+      env:
+        # vcpkg quotes {url} and {dst} itself, including paths containing spaces.
+        # Retry individual downloads, including DNS errors, rather than builds.
+        X_VCPKG_ASSET_SOURCES: >-
+          x-script,curl --fail --location --retry 2 --retry-all-errors
+          --retry-delay 10 --connect-timeout 30 --output {dst} {url}
+      run: |
+        cache_dir="${RUNNER_TEMP//\\//}/vcpkg-binary-cache"
+        mkdir -p "$cache_dir"
+        echo "VCPKG_BINARY_SOURCES=clear;files,$cache_dir,readwrite" >> "$GITHUB_ENV"
+        echo "X_VCPKG_ASSET_SOURCES=$X_VCPKG_ASSET_SOURCES" >> "$GITHUB_ENV"
+        echo "cache-path=$cache_dir" >> "$GITHUB_OUTPUT"
+        echo "vcpkg-revision=$(git rev-parse HEAD:vcpkg)" >> "$GITHUB_OUTPUT"
+        echo "image-version=${ImageVersion:-unknown}" >> "$GITHUB_OUTPUT"
+
+    # run-vcpkg requires binaryCachePath to exist before the action starts.
+    - uses: lukka/run-vcpkg@v11
+      with:
+        binaryCachePath: ${{ steps.config.outputs.cache-path }}
+
+    - name: Cache vcpkg binaries
+      uses: actions/cache@v4
+      with:
+        path: ${{ steps.config.outputs.cache-path }}
+        # Separate matrix jobs to avoid competing to save different package sets.
+        # A new runner image may change the compiler and therefore package ABIs.
+        key: vcpkg-v1-${{ runner.os }}-${{ runner.arch }}-${{ inputs.cache-key }}-${{ steps.config.outputs.image-version }}-${{ steps.config.outputs.vcpkg-revision }}-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json', 'CMakeLists.txt', 'cmake/**') }}
+        # vcpkg validates package ABIs when reusing an older dependency cache.
+        restore-keys: |
+          vcpkg-v1-${{ runner.os }}-${{ runner.arch }}-${{ inputs.cache-key }}-${{ steps.config.outputs.image-version }}-
