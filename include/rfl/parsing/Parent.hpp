@@ -21,6 +21,12 @@ struct Parent {
     OutputArrayType* arr_;
   };
 
+  // The key and value of a typed map entry are serialized in that order.
+  template <class T>
+  struct MapEntry {
+    T* entry_;
+  };
+
   // For schemaful formats only.
   template <class T>
   struct Map {
@@ -59,6 +65,9 @@ struct Parent {
     using Type = std::remove_cvref_t<ParentType>;
     if constexpr (std::is_same<Type, Array>()) {
       return _w.add_array_to_array(_size, _parent.arr_);
+
+    } else if constexpr (is_map_entry<Type>()) {
+      return _w.add_array_to_map_entry(_size, _parent.entry_);
 
     } else if constexpr (std::is_same<Type, Object>()) {
       return _w.add_array_to_object(_parent.name_, _size, _parent.obj_);
@@ -147,6 +156,9 @@ struct Parent {
     if constexpr (std::is_same<Type, Array>()) {
       return _w.add_map_to_array(_size, _parent.arr_);
 
+    } else if constexpr (is_map_entry<Type>()) {
+      return _w.add_map_to_map_entry(_size, _parent.entry_);
+
     } else if constexpr (std::is_same<Type, Map<typename W::OutputMapType>>()) {
       return _w.add_map_to_map(_parent.name_, _size, _parent.map_);
 
@@ -180,6 +192,9 @@ struct Parent {
     using Type = std::remove_cvref_t<ParentType>;
     if constexpr (std::is_same<Type, Array>()) {
       return _w.add_object_to_array(_size, _parent.arr_);
+
+    } else if constexpr (is_map_entry<Type>()) {
+      return _w.add_object_to_map_entry(_size, _parent.entry_);
 
     } else if constexpr (std::is_same<Type, Object>()) {
       return _w.add_object_to_object(_parent.name_, _size, _parent.obj_);
@@ -215,6 +230,9 @@ struct Parent {
     using Type = std::remove_cvref_t<ParentType>;
     if constexpr (std::is_same<Type, Array>()) {
       return _w.add_null_to_array(_parent.arr_);
+
+    } else if constexpr (is_map_entry<Type>()) {
+      return _w.add_null_to_map_entry(_parent.entry_);
 
     } else if constexpr (std::is_same<Type, Object>()) {
       if constexpr (supports_attributes<std::remove_cvref_t<W>>) {
@@ -256,6 +274,9 @@ struct Parent {
     if constexpr (std::is_same<Type, Array>()) {
       return _w.add_union_to_array(_parent.arr_);
 
+    } else if constexpr (is_map_entry<Type>()) {
+      return _w.add_union_to_map_entry(_parent.entry_);
+
     } else if constexpr (std::is_same<Type, Map<typename W::OutputMapType>>()) {
       return _w.add_union_to_map(_parent.name_, _parent.map_);
 
@@ -291,6 +312,9 @@ struct Parent {
     if constexpr (std::is_same<Type, Array>()) {
       return _w.add_value_to_array(_var, _parent.arr_);
 
+    } else if constexpr (is_map_entry<Type>()) {
+      return _w.add_value_to_map_entry(_var, _parent.entry_);
+
     } else if constexpr (std::is_same<Type, Object>()) {
       if constexpr (supports_attributes<std::remove_cvref_t<W>>) {
         return _w.add_value_to_object(_parent.name_, _var, _parent.obj_,
@@ -314,6 +338,16 @@ struct Parent {
 
     } else {
       static_assert(always_false_v<Type>, "Unsupported option.");
+    }
+  }
+
+ private:
+  template <class T>
+  static constexpr bool is_map_entry() {
+    if constexpr (requires { typename W::OutputMapEntryType; }) {
+      return std::is_same_v<T, MapEntry<typename W::OutputMapEntryType>>;
+    } else {
+      return false;
     }
   }
 };
