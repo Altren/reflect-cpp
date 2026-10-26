@@ -1,6 +1,7 @@
 #ifndef RFL_CEREAL_PARSER_HPP_
 #define RFL_CEREAL_PARSER_HPP_
 
+#include <array>
 #include <cstddef>
 #include <exception>
 #include <string>
@@ -14,6 +15,43 @@
 
 namespace rfl {
 namespace parsing {
+
+template <class T, std::size_t N, class ProcessorsType>
+  requires(std::is_arithmetic_v<T> && !std::is_const_v<T> &&
+           !std::is_volatile_v<T>)
+struct Parser<cereal::Reader, cereal::Writer, std::array<T, N>, ProcessorsType>
+    : ParserArray<cereal::Reader, cereal::Writer, T, N, ProcessorsType> {
+  using R = cereal::Reader;
+  using W = cereal::Writer;
+  using Type = std::array<T, N>;
+
+  static Result<Type> read(const R&,
+                           const typename R::InputVarType& _var) noexcept {
+    try {
+      Type values;
+      if constexpr (N != 0) {
+        // Keep the typed pointer: portable binary swaps each T separately.
+        (*_var.archive_)(::cereal::binary_data(values.data(), N * sizeof(T)));
+      }
+      return values;
+    } catch (const std::exception& e) {
+      return error(std::string("Cereal array read error: ") + e.what());
+    }
+  }
+
+  template <class ParentType>
+  static void write(const W& _w, const Type& _values,
+                    const ParentType& _parent) {
+    // Even empty arrays need parent metadata, but never a length prefix.
+    auto arr = Parent<W>::add_fixed_array(_w, N, _parent);
+    if constexpr (N != 0) {
+      // Cereal encodes arithmetic scalars (including bool and character types)
+      // as sizeof(T) bytes, just like this contiguous std::array payload.
+      _w.write_array_data(_values.data(), N);
+    }
+    _w.end_array(&arr);
+  }
+};
 
 template <class T, class ProcessorsType>
   requires(std::is_arithmetic_v<T> && !std::is_same_v<T, bool> &&

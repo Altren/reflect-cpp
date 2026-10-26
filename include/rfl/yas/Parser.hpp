@@ -1,6 +1,7 @@
 #ifndef RFL_YAS_PARSER_HPP_
 #define RFL_YAS_PARSER_HPP_
 
+#include <array>
 #include <cstddef>
 #include <exception>
 #include <string>
@@ -18,6 +19,42 @@
 
 namespace rfl {
 namespace parsing {
+
+template <class T, std::size_t N, class ProcessorsType>
+  requires((std::is_integral_v<T> || std::is_same_v<T, float> ||
+            std::is_same_v<T, double>) &&
+           !std::is_const_v<T> && !std::is_volatile_v<T>)
+struct Parser<yas::Reader, yas::Writer, std::array<T, N>, ProcessorsType>
+    : ParserArray<yas::Reader, yas::Writer, T, N, ProcessorsType> {
+  using R = yas::Reader;
+  using W = yas::Writer;
+  using Type = std::array<T, N>;
+
+  static Result<Type> read(const R&,
+                           const typename R::InputVarType& _var) noexcept {
+    try {
+      Type values;
+      if constexpr (N != 0) {
+        // This adapter uses YAS's non-compacted, host-endian binary archive.
+        _var.ar->read(values.data(), N * sizeof(T));
+      }
+      return values;
+    } catch (const std::exception& e) {
+      return error(std::string("yas array read error: ") + e.what());
+    }
+  }
+
+  template <class ParentType>
+  static void write(const W& _w, const Type& _values,
+                    const ParentType& _parent) {
+    auto arr = Parent<W>::add_fixed_array(_w, N, _parent);
+    if constexpr (N != 0) {
+      // bool and character scalars also use their native representation.
+      arr.ar->write(_values.data(), N * sizeof(T));
+    }
+    _w.end_array(&arr);
+  }
+};
 
 template <class T, class ProcessorsType>
   requires((std::is_integral_v<T> || std::is_same_v<T, float> ||
