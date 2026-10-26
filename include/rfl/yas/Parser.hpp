@@ -8,7 +8,6 @@
 #include <string>
 #include <type_traits>
 #include <vector>
-#include <yas/types/std/bitset.hpp>
 
 #include "../Generic.hpp"
 #include "../NamedTuple.hpp"
