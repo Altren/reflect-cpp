@@ -20,8 +20,9 @@ namespace rfl::parsing {
 template <class T, std::size_t N, class... Ps>
 struct Parser<cereal::Reader, cereal::Writer, std::array<T, N>,
               Processors<test_numeric_array_io::GenericArrays, Ps...>>
-    : ParserArray<cereal::Reader, cereal::Writer, T, N,
-                  Processors<test_numeric_array_io::GenericArrays, Ps...>> {};
+    : test_numeric_array_io::GenericArrayParser<
+          cereal::Reader, cereal::Writer, T, N,
+          Processors<test_numeric_array_io::GenericArrays, Ps...>> {};
 }  // namespace rfl::parsing
 
 namespace test_numeric_array_io {

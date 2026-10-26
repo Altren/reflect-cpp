@@ -8,8 +8,9 @@ namespace rfl::parsing {
 template <class T, std::size_t N, class... Ps>
 struct Parser<yas::Reader, yas::Writer, std::array<T, N>,
               Processors<test_numeric_array_io::GenericArrays, Ps...>>
-    : ParserArray<yas::Reader, yas::Writer, T, N,
-                  Processors<test_numeric_array_io::GenericArrays, Ps...>> {};
+    : test_numeric_array_io::GenericArrayParser<
+          yas::Reader, yas::Writer, T, N,
+          Processors<test_numeric_array_io::GenericArrays, Ps...>> {};
 }  // namespace rfl::parsing
 
 namespace test_numeric_array_io {

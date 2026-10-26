@@ -13,7 +13,7 @@ struct Parser<boost_serialization::Reader<::boost::archive::binary_iarchive>,
               boost_serialization::Writer<::boost::archive::binary_oarchive>,
               std::array<T, N>,
               Processors<test_numeric_array_io::GenericArrays, Ps...>>
-    : ParserArray<
+    : test_numeric_array_io::GenericArrayParser<
           boost_serialization::Reader<::boost::archive::binary_iarchive>,
           boost_serialization::Writer<::boost::archive::binary_oarchive>, T, N,
           Processors<test_numeric_array_io::GenericArrays, Ps...>> {};
@@ -39,7 +39,11 @@ void check(const auto& input) {
 }  // namespace
 
 TEST(boost_serialization, numeric_array_wire_compatibility) {
-  check_types(write<>, read<>, write<GenericArrays>, read<GenericArrays>);
+  // bool deliberately retains the production generic parser, whose N == 1
+  // raw buffer triggers GCC 13's -Wmaybe-uninitialized false positive. Keep
+  // bool coverage at N == 0, 4, and 65; all optimized types also test N == 1.
+  check_types<false>(write<>, read<>, write<GenericArrays>,
+                     read<GenericArrays>);
 }
 
 TEST(boost_serialization, numeric_array_parents) {

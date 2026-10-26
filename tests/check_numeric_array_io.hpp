@@ -11,6 +11,8 @@
 #include <map>
 #include <optional>
 #include <rfl/Processors.hpp>
+#include <rfl/parsing/ArrayReader.hpp>
+#include <rfl/parsing/ParserArray.hpp>
 #include <string>
 #include <tuple>
 #include <type_traits>
@@ -20,6 +22,30 @@
 namespace test_numeric_array_io {
 // Select the existing element-by-element array parser in backend test adapters.
 struct GenericArrays : rfl::Processors<> {};
+
+template <class R, class W, class T, std::size_t N, class Ps>
+struct GenericArrayParser : rfl::parsing::ParserArray<R, W, T, N, Ps> {
+  static rfl::Result<std::array<T, N>> read(
+      const R& reader, const typename R::InputVarType& var) noexcept {
+    if constexpr (std::is_arithmetic_v<T>) {
+      // Keep the generic element reader, but give GCC initialized storage.
+      // GCC 13 reports -Wmaybe-uninitialized for the generic parser's raw
+      // placement-new buffer when these tests instantiate one-element arrays.
+      std::array<T, N> values{};
+      const rfl::parsing::ArrayReader<R, W, Ps, T, N> elements(&reader,
+                                                               &values);
+      if (const auto err = reader.template read_fixed_array<N>(elements, var)) {
+        return rfl::error(*err);
+      }
+      if (const auto err = elements.check_size()) {
+        return rfl::error(*err);
+      }
+      return values;
+    } else {
+      return rfl::parsing::ParserArray<R, W, T, N, Ps>::read(reader, var);
+    }
+  }
+};
 
 struct Nested {
   std::array<double, 3> values;
@@ -49,11 +75,14 @@ void check_compatible(const T& input, Write write, Read read,
   EXPECT_EQ(write(*decoded), generic);
 }
 
-template <class T, class Check, class Write, class Read, class GenericWrite>
+template <class T, bool CheckSingleBool = true, class Check, class Write,
+          class Read, class GenericWrite>
 void check_type(Check check, Write write, Read read,
                 GenericWrite generic_write) {
   check(std::array<T, 0>{});
-  check(std::array<T, 1>{T(1)});
+  if constexpr (CheckSingleBool || !std::is_same_v<T, bool>) {
+    check(std::array<T, 1>{T(1)});
+  }
   check(std::array<T, 4>{std::numeric_limits<T>::lowest(), T(0), T(1),
                          std::numeric_limits<T>::max()});
   std::array<T, 65> many{};
@@ -73,14 +102,15 @@ void check_type(Check check, Write write, Read read,
   }
 }
 
-template <class Write, class Read, class GenericWrite, class GenericRead>
+template <bool CheckSingleBool = true, class Write, class Read,
+          class GenericWrite, class GenericRead>
 void check_types(Write write, Read read, GenericWrite generic_write,
                  GenericRead generic_read) {
   const auto check = [&](const auto& input) {
     check_compatible(input, write, read, generic_write, generic_read);
   };
   [&]<class... Ts>(std::tuple<Ts...>*) {
-    (check_type<Ts>(check, write, read, generic_write), ...);
+    (check_type<Ts, CheckSingleBool>(check, write, read, generic_write), ...);
   }(static_cast<std::tuple<
         std::int8_t, std::uint8_t, std::int16_t, std::uint16_t, std::int32_t,
         std::uint32_t, std::int64_t, std::uint64_t, float, double, bool, char,
