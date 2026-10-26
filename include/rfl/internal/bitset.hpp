@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <string>
 #include <string_view>
+#include <utility>
 
 #include "../Result.hpp"
 
@@ -13,8 +14,12 @@ namespace rfl::internal {
 template <std::size_t N>
 Result<std::bitset<N>> bitset_from_string(const std::string_view _str) {
   if (_str.size() != N) {
-    return error("Expected a bitset string of length " + std::to_string(N) +
-                 ", got " + std::to_string(_str.size()) + ".");
+    std::string message = "Expected a bitset string of length ";
+    message += std::to_string(N);
+    message += ", got ";
+    message += std::to_string(_str.size());
+    message += ".";
+    return error(std::move(message));
   }
   std::bitset<N> bits;
   for (std::size_t i = 0; i < N; ++i) {
@@ -46,9 +51,12 @@ template <std::size_t N, class Bytes>
 Result<std::bitset<N>> bitset_from_bytes(const Bytes& _bytes) {
   constexpr auto size = N / 8 + (N % 8 != 0);
   if (_bytes.size() != size) {
-    return error("Expected " + std::to_string(size) +
-                 " packed bitset bytes, got " + std::to_string(_bytes.size()) +
-                 ".");
+    std::string message = "Expected ";
+    message += std::to_string(size);
+    message += " packed bitset bytes, got ";
+    message += std::to_string(_bytes.size());
+    message += ".";
+    return error(std::move(message));
   }
   if constexpr (N % 8 != 0) {
     constexpr auto mask = (1u << (8 - N % 8)) - 1;
