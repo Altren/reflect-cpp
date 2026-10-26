@@ -1,6 +1,7 @@
 #ifndef RFL_BOOST_SERIALIZATION_PARSER_HPP_
 #define RFL_BOOST_SERIALIZATION_PARSER_HPP_
 
+#include <array>
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 #include <cstddef>
@@ -21,6 +22,46 @@
 
 namespace rfl {
 namespace parsing {
+
+// Keep bool on the generic path to retain Boost's scalar validity assertions.
+// Other archive types (including text archives) keep their generic parser too.
+template <class T, std::size_t N, class ProcessorsType>
+  requires(std::is_arithmetic_v<T> && !std::is_same_v<T, bool> &&
+           !std::is_const_v<T> && !std::is_volatile_v<T>)
+struct Parser<boost_serialization::Reader<::boost::archive::binary_iarchive>,
+              boost_serialization::Writer<::boost::archive::binary_oarchive>,
+              std::array<T, N>, ProcessorsType>
+    : ParserArray<
+          boost_serialization::Reader<::boost::archive::binary_iarchive>,
+          boost_serialization::Writer<::boost::archive::binary_oarchive>, T, N,
+          ProcessorsType> {
+  using R = boost_serialization::Reader<::boost::archive::binary_iarchive>;
+  using W = boost_serialization::Writer<::boost::archive::binary_oarchive>;
+  using Type = std::array<T, N>;
+
+  static Result<Type> read(const R&,
+                           const typename R::InputVarType& _var) noexcept {
+    try {
+      Type values;
+      if constexpr (N != 0) {
+        _var.ar->load_binary(values.data(), N * sizeof(T));
+      }
+      return values;
+    } catch (const std::exception& e) {
+      return error(std::string("Boost binary array read error: ") + e.what());
+    }
+  }
+
+  template <class ParentType>
+  static void write(const W& _w, const Type& _values,
+                    const ParentType& _parent) {
+    auto arr = Parent<W>::add_fixed_array(_w, N, _parent);
+    if constexpr (N != 0) {
+      _w.write_array_data(_values.data(), N);
+    }
+    _w.end_array(&arr);
+  }
+};
 
 template <class T, class ProcessorsType>
   requires(std::is_arithmetic_v<T> && !std::is_same_v<T, bool> &&
